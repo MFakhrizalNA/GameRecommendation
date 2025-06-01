@@ -362,6 +362,7 @@ Artinya, sekitar 56.76% dari keseluruhan nilai dalam matriks TF-IDF adalah nol. 
 Distribusi skor kemiripan antar game divisualisasikan menggunakan histogram berdasarkan cosine similarity dari seluruh pasangan game.
 
 ![box](image/evaluasi.png)
+
 Interpretasi:
 
 Mayoritas pasangan game memiliki similarity score di bawah 0.3, menunjukkan bahwa sebagian besar game memiliki konten yang berbeda secara signifikan.
