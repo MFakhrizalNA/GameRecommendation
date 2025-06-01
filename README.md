@@ -310,160 +310,108 @@ Keterangan:
 
 # Modeling
 ## Content Based Filtering
+Pada tahap ini, model sistem rekomendasi dibangun untuk menyelesaikan permasalahan bagaimana pengguna dapat menemukan permainan video yang relevan dan sesuai dengan preferensi mereka. Mengingat keterbatasan dataset yang tidak memuat data historis pengguna, maka pendekatan utama yang digunakan adalah Content-Based Filtering (CBF), yang memanfaatkan fitur konten dari game seperti genre, platform, dan skor ulasan.
 
-#### Penjelasan Kode
+1. Content-Based Filtering menggunakan TF-IDF dan Cosine Similarity
+Pada solusi ini, dilakukan ekstraksi fitur teks dari kolom genre dan/atau atribut kategorikal lain seperti platform dan developer. Fitur-fitur tersebut diubah ke dalam representasi numerik menggunakan metode TF-IDF (Term Frequency-Inverse Document Frequency), yang mampu memberi bobot tinggi pada istilah yang unik bagi sebuah game namun jarang muncul di game lainnya.
 
-```python
-indices = [[index_map[i] for i in user_recs] for user_recs in new_indices]
+Selanjutnya, Cosine Similarity digunakan untuk mengukur kedekatan antar game berdasarkan vektor TF-IDF. Dengan cara ini, sistem dapat memberikan Top-N rekomendasi, yaitu daftar game yang paling mirip dengan game input (misalnya yang disukai pengguna), berdasarkan kemiripan konten.
 
-```
+Contoh Output Top-10 Recommendation:
 
-**Top 10 Rekomendasi pekerjaan yang diberikan oleh model ini adalah sebagai berikut:**
-|User_ID|  Job_ID|  Similarity_Score|
-|-------|--------|------------------|
-|9|        399|            0.7715|
-|9|         16|            0.6667|
-|9|        413|            0.6117|
-|9|        405|            0.5770|
-|9|        440|            0.4997|
-|9|         68|            0.4706|
-|9|         66|            0.3648|
-|9|        247|            0.2883|
-|9|        319|            0.2353|
-|9|         53|            0.1820|
+|Game|  Title|  Game Genre|
+|----|-------|------------|
+|0|	The Sims 4 |	Shooter   |
+|1|	Street Fighter V |	Fighting |
+|2|	Pillars of Eternity II: Deadfire |	Puzzle |
+|3|	The Elder Scrolls V: Skyrim |	Action |
+|4|	Minecraft |	Party |
+|5|	Hades |	Puzzle |
+|6|	Halo Infinite |	Action |
+|7|	Half-Life: Alyx |	Action |
+|8|	Mario Kart 8 Deluxe |	Adventure |
+|9|	Super Mario Odyssey |	Fighting |
 
-## Collaborative Filtering + Content Based Filtering (Hybrid)
-### LightFM
-**LightFM** adalah library Python yang menggabungkan collaborative filtering dan content-based filtering melalui model pembelajaran representasi (embedding). LightFM menggunakan pembelajaran matrix factorization dengan pendekatan supervised (menggunakan loss function seperti BPR, logistic, hinge, atau WARP)[[3]](https://anaconda.org/conda-forge/lightfm#:~:text=LightFM%20is%20a%20Python%20implementation,and%20produces%20high%20quality%20results.).
+## Kelebihan:
+- Tidak bergantung pada data pengguna lain: Sistem tetap dapat berjalan walau pengguna baru (solusi untuk cold-start pada user).
+- Rekomendasi personal berdasarkan item mirip: Cocok untuk pengguna dengan preferensi spesifik terhadap genre atau fitur game tertentu.
+- Dapat dijelaskan: Sistem dapat menjelaskan mengapa sebuah game direkomendasikan (misalnya: genre sama, skor tinggi, platform sama).
 
-**Keunggulan**:
-  - Dapat memanfaatkan fitur pengguna dan item (content-based).
-  - Mendukung rekomendasi untuk item baru (cold start).
-  - Cocok untuk skala besar.
-
-**Kekurangan**:
-  - Butuh tuning dan data fitur yang bagus – Performa sangat tergantung pada parameter dan kualitas fitur user/item.
-  - Kurang efisien di dataset besar – Training bisa lambat jika data sangat besar.
-  - Kurang interpretatif – Embedding sulit dijelaskan secara langsung.
-
-**Top 5 Rekomendasi pekerjaan diberikan ses oleh model ini adalah sebagai berikut (sample user=2000)**
-|Job_ID|Requirements|User Skills|
-|------|------------|-----------|
-|499|CSS, HTML, SQL, Java|HTML, JavaScript, Java|
-|137|Data Science, Machine Learning, JavaScript|CSS, Machine Learning, C++|
-|45|AI, JavaScript, Java, Python, Machine Learning|Machine Learning, C++, AI, Python|
-|176|JavaScript, HTML, C++, Data Science|C++, CSS, HTML, Machine Learning|
-|255|HTML, Java, Python|Data Science, C++|
+## Kekurangan:
+- Kurang variatif: Sistem hanya merekomendasikan item yang mirip dengan yang sudah pernah dilihat atau disukai, sehingga kurang mengeksplorasi pilihan baru (sering disebut “serendipity” rendah).
+- Terbatas pada fitur yang tersedia: Jika deskripsi atau metadata game tidak informatif atau tidak lengkap, hasil rekomendasi bisa menjadi kurang akurat.
+- Over-specialization: Sistem cenderung memberikan rekomendasi yang terlalu serupa dan sempit.
 
 # Evaluasi 
-## ROC-AUC
-**ROC-AUC** adalah metrik evaluasi untuk masalah klasifikasi biner yang mengukur kemampuan model dalam membedakan antara dua kelas (dalam kasusmu: pekerjaan yang direkomendasikan 1 dan tidak 0)[[5]](https://scikit-learn.org/stable/modules/model_evaluation.html).
+Evaluasi pada sistem rekomendasi berbasis Content-Based Filtering dilakukan untuk memahami efektivitas model dalam memberikan rekomendasi yang relevan berdasarkan fitur konten game. Mengingat tidak adanya data eksplisit dari pengguna, maka evaluasi dilakukan melalui pendekatan statistik dan analisis kesamaan konten.
 
-### ROC adalah kurva yang menunjukkan trade-off antara:
-- True Positive Rate (TPR): berapa banyak item positif yang berhasil dikenali (juga disebut Recall)
-- False Positive Rate (FPR): berapa banyak item negatif yang salah diklasifikasi sebagai positif
+1. Sparsity Matrix
+Salah satu langkah awal evaluasi dilakukan dengan menghitung sparsity (kekosongan) dari TF-IDF matrix:
+```
+sparsity = (1.0 - tfidf_matrix.count_nonzero() / float(tfidf_matrix.shape[0] * tfidf_matrix.shape[1])) * 100
+```
+Hasil:
 
-### AUC (Area Under Curve) adalah luas di bawah kurva ROC, dengan nilai antara:
-- 1.0 = model sempurna
-- 0.5 = model tebak-tebakan (random guess)
-- < 0.5 = model buruk (prediksi berlawanan)
+Sparsity dari TF-IDF matrix: 56.76%
 
-## Precision@K
+Interpretasi:
 
-**Precision@K** mengukur seberapa banyak rekomendasi yang relevan di dalam **K rekomendasi teratas** yang diberikan oleh model. Precision menghitung **proporsi item relevan** dalam K item yang diprediksi oleh model [[5]](https://scikit-learn.org/stable/modules/model_evaluation.html).
+Artinya, sekitar 56.76% dari keseluruhan nilai dalam matriks TF-IDF adalah nol. Ini cukup umum terjadi karena sebagian besar game hanya memiliki sebagian kecil fitur unik (misalnya genre tertentu), yang menghasilkan representasi vektor yang jarang. Meski sparse, TF-IDF tetap efektif dalam merepresentasikan informasi penting dari konten teks.
 
-**Rumus Precision@K:**
+2. Distribusi Cosine Similarity
+Distribusi skor kemiripan antar game divisualisasikan menggunakan histogram berdasarkan cosine similarity dari seluruh pasangan game.
 
-$$
-\text{Precision@K} = \frac{\text{Jumlah item relevan di top-K}}{K}
-$$
+![box](image/evaluasi.png)
+Interpretasi:
 
-Dimana:
-- **Jumlah item relevan di top-K** adalah jumlah item yang relevan dalam K rekomendasi teratas.
-- **K** adalah jumlah item teratas yang direkomendasikan.
+Mayoritas pasangan game memiliki similarity score di bawah 0.3, menunjukkan bahwa sebagian besar game memiliki konten yang berbeda secara signifikan.
 
-## Recall@K
+Namun, terdapat kluster skor tinggi mendekati 1.0 yang menunjukkan adanya pasangan game dengan fitur yang sangat mirip, yang merupakan kandidat ideal untuk rekomendasi.
 
-**Recall@K** mengukur seberapa banyak item relevan yang ditemukan di dalam **K rekomendasi teratas** yang diberikan oleh model. Recall menghitung **proporsi item relevan** yang berhasil diprediksi oleh model dari seluruh item relevan yang ada[[5]](https://scikit-learn.org/stable/modules/model_evaluation.html).
+3. Top-N Recommendation Check
+Pengujian rekomendasi dilakukan menggunakan fungsi recommend_games_safe(). Misalnya, untuk game Minecraft, sistem merekomendasikan lima game dengan similarity score 1.0:
 
-**Rumus Recall@K:**
+| Game Title         | Similarity Score |
+| ------------------ | ---------------- |
+| Spelunky 2         | 1.0              |
+| Hades              | 1.0              |
+| Fortnite           | 1.0              |
+| Tomb Raider (2013) | 1.0              |
+| The Sims 4         | 1.0              |
 
-$$
-\text{Recall@K} = \frac{\text{Jumlah item relevan di top-K}}{\text{Jumlah total item relevan}}
-$$
+Interpretasi:
 
-Dimana:
-- **Jumlah total item relevan** adalah jumlah keseluruhan item relevan yang seharusnya direkomendasikan kepada pengguna.
-- **K** adalah jumlah item teratas yang direkomendasikan.
+Nilai 1.0 pada cosine similarity menunjukkan bahwa fitur konten dari game-game tersebut sangat identik dengan Minecraft, setidaknya berdasarkan vektor fitur yang diolah. Namun, untuk memverifikasi relevansinya secara semantik, perlu dilakukan evaluasi berbasis genre.
 
-## MAP (Mean Average Precision)
-**MAP (Mean Average Precision)** adalah salah satu metrik evaluasi yang digunakan dalam sistem rekomendasi dan pencarian informasi untuk **mengukur kualitas peringkat hasil rekomendasi** berdasarkan relevansi terhadap ground truth (label kebenaran).
+4. Evaluasi Genre Match
+Untuk menguji apakah rekomendasi memang relevan dari segi konten, dilakukan analisis kecocokan genre antara game asli dan rekomendasinya:
 
-MAP menilai:
-- Seberapa awal item yang relevan muncul dalam daftar rekomendasi.
-- Seberapa lengkap item relevan tercakup dalam top-K rekomendasi.
+```
+evaluate_genre_match_safe('Spelunky 2', df, cosine_sim, top_n=5)
+```
 
-**Rumus MAP**
+Output:
 
-MAP dihitung sebagai rata-rata dari **Average Precision (AP)** untuk setiap user.
+🎮 Game Asli: Spelunky 2 | Genre: Adventure
 
-1. **Average Precision (AP)**
+1. 1000-Piece Puzzle | Genre: Party | Match: ❌
+2. Mario Kart 8 Deluxe | Genre: RPG | Match: ❌
+3. Tomb Raider (2013) | Genre: Adventure | Match: ✅
+4. Hades | Genre: Puzzle | Match: ❌
+5. Half-Life: Alyx | Genre: Adventure | Match: ✅
+✅ 2/5 rekomendasi memiliki genre yang sama.
 
-Untuk satu user:
+Interpretasi:
+- Dari 5 game yang direkomendasikan, 2 di antaranya memiliki genre yang sama.
+- Hal ini menunjukkan bahwa meskipun model dapat menghasilkan game dengan skor similarity tinggi, tidak semuanya konsisten dalam hal genre.
+- Perbedaan ini bisa disebabkan oleh generalisasi dari fitur vektor atau pencampuran genre pada game yang bersifat multi-genre.
 
-$$
-\text{AP} = \frac{1}{|\text{Item Relevan}|} \sum_{k=1}^{N} P(k) \cdot rel(k)
-$$
+## Kesimpulan
 
-- \( P(k) \) = Precision pada posisi ke-`k`.
-- \( rel(k) \) = 1 jika item ke-`k` relevan, 0 jika tidak.
-- \( N \) = Jumlah item direkomendasikan.
+Dalam era industri video game yang terus berkembang, para pengguna dihadapkan pada ribuan pilihan judul game dari berbagai genre, platform, dan gaya permainan. Hal ini memunculkan tantangan utama: bagaimana menemukan game yang relevan dan sesuai dengan preferensi pengguna secara efisien. Melalui proyek ini, telah dikembangkan sebuah sistem rekomendasi berbasis Content-Based Filtering yang bertujuan untuk menyelesaikan dua permasalahan utama: (1) kesulitan pengguna dalam menemukan game yang sesuai dengan minat mereka, dan (2) kebutuhan pengembang untuk meningkatkan keterlibatan dan kepuasan pengguna melalui rekomendasi yang tepat sasaran.
 
-2. **Mean Average Precision (MAP)**
+Model yang dibangun menggunakan pendekatan TF-IDF terhadap fitur tekstual seperti genre dan deskripsi game, menghasilkan rekomendasi top-N berdasarkan kemiripan konten (cosine similarity). Evaluasi terhadap model ini menunjukkan bahwa:
 
-$$
-\text{MAP} = \frac{1}{|U|} \sum_{u=1}^{|U|} \text{AP}_u
-$$
-
-- \( |U| \) = Jumlah user.
-- $$\text{AP}_u$$ = Average Precision untuk user ke-`u`.
-
-## Hasil Evaluasi Model Collaborative Filtering
-|Metrik|	Nilai	|Interpretasi|
-|------|--------|------------|
-|Precision@10|	0.3520|	Rata-rata, 35.2% dari 10 rekomendasi yang diberikan adalah benar (relevan).|
-|Recall@10|	0.9099|	Rata-rata, 90.99% dari total pekerjaan relevan berhasil direkomendasikan.|
-|MAP@10|	0.4529|	Kualitas ranking cukup baik — item relevan muncul relatif awal di daftar.|
-
-## Hasil Evaluasi Model Hybrid Recommendation
-|Metrik|	Nilai	|Interpretasi|
-|------|--------|------------|
-|Precision@5| 0.1604|Rata-rata, 16% dari 5 rekomendasi relevan| 
-|Recall@5| 0.8020|Rata-rata, 80.2% dari total pekerjaan relevan direkomendasikan|
-|AUC Score| 0.9004|Skor 90% sangat bagus - membedakan antara item relevan dan tidak relevan dengan tingkat keakuratan yang tinggi| 
-
-## Hubungan dengan Business Understanding
-### a. Problem Statement:
-Permasalahan utama yang dihadapi dunia kerja Indonesia adalah  tingginya mismatch antara latar belakang pendidikan dan pekerjaan, serta minimnya sistem rekomendasi pekerjaan yang adaptif dan personal, maka:
-   - Nilai recall **tinggi** dari kedua model menunjukan bahwa sistem ini dapat mengidentifikasi sebagian besar pekerjaan relevan bagi pengguna dan mampu meminimaliris mismatch
-   - Nilai precision yang masih **sedang** menunjukkan masih ada ruang untuk meningkatkan akurasi, tetapi sudah cukup untuk menjadi fondasi sistem rekomendasi awal.
-
-### b. Goals
-Salah satu tujuan utama adalah membantu mahasiswa dan lulusan menemukan pekerjaan yang sesuai dengan profi dan akademik dan kompetisinya sehingga:
-   - Sistem rekomendasi dengan nilai AUC > 0.9 menandakan bahwa personalization model bekerja sangat baik dalam memahami relevansi.
-   - Implementasi hybrid model memberi arah pada pengembangan sistem adaptif dan berbasis data yang sesuai dengan dinamika kebutuhan pasar tenaga kerja.
-
-### Solution Statement
-Solusi yang dikembangkan adalah model rekomendasi berbasis Collaborative Filtering dan Hybrid System, dievaluasi dengan metrik-metrik seperti precision, recall, MAP, dan AUC untuk menjamin efektivitasnya. Hal ini membuktikan bahwa **Evaluasi model memberikan solusi teknis yang dapat berkontribusi langsung pada visi bisnis, yaitu menciptakan sistem karier berbasis kecocokan dan data-driven decision-making.**
-
----
-# Referensi 
-[1] F. I. Afero, C. P. Dimala, and M. C. Ibad, "Self-Efficacy as a Mediation the Influence of Proactive Personality on Career Adaptability in Early Adults," Psikostudia: Jurnal Psikologi, vol. 12, no. 4, pp. 517–523, 2023.
-
-[2] S. Frisnoiry, H. M. Sihotang, N. Indri, and T. Munthe, "Analisis Permasalahan Pengangguran Di Indonesia," Kompak: Jurnal Ilmiah Komputerisasi Akuntansi, vol. 17, no. 1, pp. 366–375, 2024.
-
-[3] conda-forge, "LightFM :: Anaconda.org", Anaconda, [Online]. Available: https://anaconda.org/conda-forge/lightfm. [Accessed: May 9, 2025].
-
-[4]Scikit-learn developers, “Neighbors: k-Nearest Neighbors (KNN),” Scikit-learn: Machine Learning in Python, [Online]. Available: https://scikit-learn.org/stable/modules/neighbors.html#neighbors. [Accessed: May 9, 2025].
-
-[5]Scikit-learn developers, “Metrics and scoring: quantifying the quality of predictions,” Scikit-learn: Machine Learning in Python, [Online]. Available: https://scikit-learn.org/stable/modules/model_evaluation.html. [Accessed: May 9, 2025].
+- Meskipun sparsity data cukup tinggi (56.76%), model masih mampu membedakan game berdasarkan kontennya.
+- Skor similarity tinggi (>0.9) mampu ditemukan antar game tertentu, meskipun tidak selalu menunjukkan genre yang sama.
+- Dari pengujian manual, rekomendasi menunjukkan 2 dari 5 game memiliki genre yang cocok, yang menandakan potensi serta ruang untuk perbaikan lebih lanjut, misalnya dengan mempertimbangkan metadata atau rating pengguna secara eksplisit.
