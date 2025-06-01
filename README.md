@@ -312,7 +312,8 @@ Keterangan:
 ## Content Based Filtering
 Pada tahap ini, model sistem rekomendasi dibangun untuk menyelesaikan permasalahan bagaimana pengguna dapat menemukan permainan video yang relevan dan sesuai dengan preferensi mereka. Mengingat keterbatasan dataset yang tidak memuat data historis pengguna, maka pendekatan utama yang digunakan adalah Content-Based Filtering (CBF), yang memanfaatkan fitur konten dari game seperti genre, platform, dan skor ulasan.
 
-1. Content-Based Filtering menggunakan TF-IDF dan Cosine Similarity
+## Content-Based Filtering menggunakan TF-IDF dan Cosine Similarity**
+
 Pada solusi ini, dilakukan ekstraksi fitur teks dari kolom genre dan/atau atribut kategorikal lain seperti platform dan developer. Fitur-fitur tersebut diubah ke dalam representasi numerik menggunakan metode TF-IDF (Term Frequency-Inverse Document Frequency), yang mampu memberi bobot tinggi pada istilah yang unik bagi sebuah game namun jarang muncul di game lainnya.
 
 Selanjutnya, Cosine Similarity digunakan untuk mengukur kedekatan antar game berdasarkan vektor TF-IDF. Dengan cara ini, sistem dapat memberikan Top-N rekomendasi, yaitu daftar game yang paling mirip dengan game input (misalnya yang disukai pengguna), berdasarkan kemiripan konten.
@@ -332,12 +333,12 @@ Contoh Output Top-10 Recommendation:
 |8|	Mario Kart 8 Deluxe |	Adventure |
 |9|	Super Mario Odyssey |	Fighting |
 
-## Kelebihan:
+**Kelebihan:**
 - Tidak bergantung pada data pengguna lain: Sistem tetap dapat berjalan walau pengguna baru (solusi untuk cold-start pada user).
 - Rekomendasi personal berdasarkan item mirip: Cocok untuk pengguna dengan preferensi spesifik terhadap genre atau fitur game tertentu.
 - Dapat dijelaskan: Sistem dapat menjelaskan mengapa sebuah game direkomendasikan (misalnya: genre sama, skor tinggi, platform sama).
 
-## Kekurangan:
+**Kekurangan:**
 - Kurang variatif: Sistem hanya merekomendasikan item yang mirip dengan yang sudah pernah dilihat atau disukai, sehingga kurang mengeksplorasi pilihan baru (sering disebut “serendipity” rendah).
 - Terbatas pada fitur yang tersedia: Jika deskripsi atau metadata game tidak informatif atau tidak lengkap, hasil rekomendasi bisa menjadi kurang akurat.
 - Over-specialization: Sistem cenderung memberikan rekomendasi yang terlalu serupa dan sempit.
@@ -345,7 +346,7 @@ Contoh Output Top-10 Recommendation:
 # Evaluasi 
 Evaluasi pada sistem rekomendasi berbasis Content-Based Filtering dilakukan untuk memahami efektivitas model dalam memberikan rekomendasi yang relevan berdasarkan fitur konten game. Mengingat tidak adanya data eksplisit dari pengguna, maka evaluasi dilakukan melalui pendekatan statistik dan analisis kesamaan konten.
 
-1. Sparsity Matrix
+## 1. Sparsity Matrix
 Salah satu langkah awal evaluasi dilakukan dengan menghitung sparsity (kekosongan) dari TF-IDF matrix:
 ```
 sparsity = (1.0 - tfidf_matrix.count_nonzero() / float(tfidf_matrix.shape[0] * tfidf_matrix.shape[1])) * 100
@@ -358,7 +359,7 @@ Interpretasi:
 
 Artinya, sekitar 56.76% dari keseluruhan nilai dalam matriks TF-IDF adalah nol. Ini cukup umum terjadi karena sebagian besar game hanya memiliki sebagian kecil fitur unik (misalnya genre tertentu), yang menghasilkan representasi vektor yang jarang. Meski sparse, TF-IDF tetap efektif dalam merepresentasikan informasi penting dari konten teks.
 
-2. Distribusi Cosine Similarity
+## 2. Distribusi Cosine Similarity
 Distribusi skor kemiripan antar game divisualisasikan menggunakan histogram berdasarkan cosine similarity dari seluruh pasangan game.
 
 ![box](image/evaluasi.png)
@@ -369,7 +370,7 @@ Mayoritas pasangan game memiliki similarity score di bawah 0.3, menunjukkan bahw
 
 Namun, terdapat kluster skor tinggi mendekati 1.0 yang menunjukkan adanya pasangan game dengan fitur yang sangat mirip, yang merupakan kandidat ideal untuk rekomendasi.
 
-3. Top-N Recommendation Check
+## 3. Top-N Recommendation Check
 Pengujian rekomendasi dilakukan menggunakan fungsi recommend_games_safe(). Misalnya, untuk game Minecraft, sistem merekomendasikan lima game dengan similarity score 1.0:
 
 | Game Title         | Similarity Score |
@@ -384,7 +385,7 @@ Interpretasi:
 
 Nilai 1.0 pada cosine similarity menunjukkan bahwa fitur konten dari game-game tersebut sangat identik dengan Minecraft, setidaknya berdasarkan vektor fitur yang diolah. Namun, untuk memverifikasi relevansinya secara semantik, perlu dilakukan evaluasi berbasis genre.
 
-4. Evaluasi Genre Match
+## 4. Evaluasi Genre Match
 Untuk menguji apakah rekomendasi memang relevan dari segi konten, dilakukan analisis kecocokan genre antara game asli dan rekomendasinya:
 
 ```
